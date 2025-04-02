@@ -10,7 +10,11 @@ def main():
     
     # Armado de intervalos
     with open(archivo, 'r') as f:
-        n = int(f.readline().strip())
+        while True:
+            linea = f.readline().strip()
+            if linea and not linea.startswith("#"):
+                break
+        n = int(linea)
         transacciones = []
         
         for _ in range(n):
@@ -20,31 +24,35 @@ def main():
             transacciones.append((minimo, maximo, (t, e)))
         
         # Leer transacciones del sospechoso (ya ordenadas)
-        sospechoso= [int(f.readline().strip()) for _ in range(n)]
-
+        sospechoso = [int(f.readline().strip()) for _ in range(n)]
 
     # Ordenamos los intervalos por su extremo derecho
     transacciones.sort(key=lambda x: x[1])
 
-    
     coincidencias = []
     i = 0  # Índice para intervalos
     j = 0  # Índice para las transacciones del sospechoso
-    # Recorremos los intervalos ordenados y bucamos coincidencia entre las sospechosas y las del intervalo
-    while i < n and j < n:
-        inicio, fin, intervalo = transacciones[i]
-        if inicio <= sospechoso[j] <= fin:
-            coincidencias.append((intervalo, sospechoso[j]))
-            j += 1
-        i += 1
-    
-    es_coincidente = (j == n)  # Si coincidieron todas las transacciones, es la rata
 
-    if es_coincidente:
-        for (t, e), s in coincidencias:
-            print(f"{s} --> {t} ± {e}")
-    else:
-        print("No es el sospechoso correcto")    
+    # Recorremos las transacciones del sospechoso asegurando que cada una tenga una coincidencia óptima
+    while j < n:
+        encontrado = False
+        while i < n:
+            inicio, fin, intervalo = transacciones[i]
+            if inicio <= sospechoso[j] <= fin:
+                coincidencias.append((intervalo, sospechoso[j]))
+                encontrado = True
+                break  # Se encontró una coincidencia, pasamos al siguiente sospechoso
+            i += 1
+        
+        if not encontrado:
+            print("No es el sospechoso correcto")
+            return
+        
+        j += 1
+
+    # Si todas las transacciones encontraron coincidencia, imprimimos el resultado
+    for (t, e), s in coincidencias:
+        print(f"{s} --> {t} ± {e}")
 
 if __name__ == "__main__":
     main()
