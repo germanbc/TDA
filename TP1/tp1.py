@@ -10,21 +10,19 @@ def main():
     
     # Armado de intervalos
     with open(archivo, 'r') as f:
-        while True:
-            linea = f.readline().strip()
-            if linea and not linea.startswith("#"):
-                break
-        n = int(linea)
+        with open(archivo, 'r') as f:
+            lineas = [line.strip() for line in f if not line.startswith("#")]  # Ignorar líneas con #
+
+        n = int(lineas[0])
         transacciones = []
-        
-        for _ in range(n):
-            t, e = map(int, f.readline().strip().split(','))
+
+        for i in range(1, n + 1):
+            t, e = map(int, lineas[i].split(','))
             minimo = t - e
             maximo = t + e
             transacciones.append((minimo, maximo, (t, e)))
-        
-        # Leer transacciones del sospechoso (ya ordenadas)
-        sospechoso = [int(f.readline().strip()) for _ in range(n)]
+
+        sospechoso = [int(line) for line in lineas[n + 1:]]
 
     # Ordenamos los intervalos por su extremo derecho
     transacciones.sort(key=lambda x: x[1])
