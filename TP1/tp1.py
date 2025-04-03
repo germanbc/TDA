@@ -7,50 +7,64 @@ def main():
         sys.exit(1)
 
     archivo = sys.argv[1]
-    
+
     # Armado de intervalos
     with open(archivo, 'r') as f:
-        with open(archivo, 'r') as f:
-            lineas = [line.strip() for line in f if not line.startswith("#")]  # Ignorar líneas con #
+        lineas = [line.strip() for line in f if not line.startswith("#")]
+    
+    n = int(lineas[0])
+    transacciones_originales = []
 
-        n = int(lineas[0])
-        transacciones = []
+    for i in range(1, n + 1):
+        t, e = map(int, lineas[i].split(','))
+        minimo = t - e
+        maximo = t + e
+        # Guardamos (min, max, datos_originales, indice_original)
+        transacciones_originales.append((minimo, maximo, (t, e), i - 1))
 
-        for i in range(1, n + 1):
-            t, e = map(int, lineas[i].split(','))
-            minimo = t - e
-            maximo = t + e
-            transacciones.append((minimo, maximo, (t, e)))
+    # Leer transacciones del sospechoso (ya ordenadas)
+    sospechoso = [int(lineas[i]) for i in range(n + 1, len(lineas))]
 
-        sospechoso = [int(line) for line in lineas[n + 1:]]
-
-    # Ordenamos los intervalos por su extremo derecho
-    transacciones.sort(key=lambda x: x[1])
+    transacciones_ordenadas = sorted(transacciones_originales, key=lambda x: x[1])
 
     coincidencias = []
-    i = 0  # Índice para intervalos
-    j = 0  # Índice para las transacciones del sospechoso
+    intervalos_usados = [False] * n  # Para rastrear qué intervalos originales (por índice) ya fueron asignados
+    match_count = 0
 
-    # Recorremos las transacciones del sospechoso asegurando que cada una tenga una coincidencia óptima
-    while j < n:
-        encontrado = False
-        while i < n:
-            inicio, fin, intervalo = transacciones[i]
-            if inicio <= sospechoso[j] <= fin:
-                coincidencias.append((intervalo, sospechoso[j]))
-                encontrado = True
-                break  # Se encontró una coincidencia, pasamos al siguiente sospechoso
-            i += 1
-        
-        if not encontrado:
-            print("No es el sospechoso correcto")
-            return
-        
-        j += 1
+    for j in range(n):
+        s_j = sospechoso[j]
+        mejor_intervalo_idx = -1 
 
-    # Si todas las transacciones encontraron coincidencia, imprimimos el resultado
-    for (t, e), s in coincidencias:
-        print(f"{s} --> {t} ± {e}")
+        for i in range(len(transacciones_ordenadas)):
+            inicio, fin, _, indice_original = transacciones_ordenadas[i]
+
+            if not intervalos_usados[indice_original] and inicio <= s_j <= fin:
+                mejor_intervalo_idx = i
+                break  # Salimos del bucle interno, ya encontramos el mejor para s_j
+
+        # Si encontramos un intervalo adecuado para s_j
+        if mejor_intervalo_idx != -1:
+            # Marcamos el intervalo original como usado
+            indice_original_a_usar = transacciones_ordenadas[mejor_intervalo_idx][3]
+            intervalos_usados[indice_original_a_usar] = True
+
+            # Guardamos la coincidencia (datos originales del intervalo, s_j)
+            datos_originales_intervalo = transacciones_ordenadas[mejor_intervalo_idx][2]
+            coincidencias.append((datos_originales_intervalo, s_j))
+            match_count += 1
+        else:
+            # Si para este s_j no encontramos ningún intervalo disponible, detenemos el proceso
+            break
+
+    # Verificamos si todas las transacciones del sospechoso fueron asignadas
+    es_coincidente = (match_count == n)
+
+    if es_coincidente:
+        coincidencias.sort(key=lambda x: x[1])
+        for (t, e), s in coincidencias:
+            print(f"{s} --> {t} ± {e}")
+    else:
+        print("No es el sospechoso correcto")
 
 if __name__ == "__main__":
     main()
