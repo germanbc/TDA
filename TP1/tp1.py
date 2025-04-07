@@ -7,39 +7,41 @@ def main():
         sys.exit(1)
 
     archivo = sys.argv[1]
-    
-    # Armado de intervalos
+
     with open(archivo, 'r') as f:
-        with open(archivo, 'r') as f:
-            lineas = [line.strip() for line in f if not line.startswith("#")]  # Ignorar líneas con #
+        # Ignoramos líneas vacías y las que comienzan con '#'
+        lineas = [line.strip() for line in f if line.strip() and not line.strip().startswith("#")]
 
-        n = int(lineas[0])
-        transacciones = []
-
-        for i in range(1, n + 1):
-            t, e = map(int, lineas[i].split(','))
-            minimo = t - e
-            maximo = t + e
-            transacciones.append((minimo, maximo, (t, e)))
-
-        sospechoso = [int(line) for line in lineas[n + 1:]]
+    n = int(lineas[0])
+    transacciones = []
+    
+    # Creamos los intervalos
+    for i in range(1, n + 1):
+        t, e = map(int, lineas[i].split(','))
+        minimo = t - e
+        maximo = t + e
+        transacciones.append((minimo, maximo, (t, e)))
 
     # Ordenamos los intervalos por su extremo derecho
     transacciones.sort(key=lambda x: x[1])
+    
+    # Asumimos que los timestamps del sospechoso ya vienen ordenados
+    sospechoso = [int(lineas[i]) for i in range(n + 1, 2 * n + 1)]
 
     coincidencias = []
-    i = 0  # Índice para intervalos
-    j = 0  # Índice para las transacciones del sospechoso
+    usados = set()  # Para no reutilizar intervalos
 
-    # Recorremos las transacciones del sospechoso asegurando que cada una tenga una coincidencia óptima
+    j = 0  # Índice para las transacciones del sospechoso
     while j < n:
+        i = 0 # Índice de las transacciones sospechosas
         encontrado = False
         while i < n:
             inicio, fin, intervalo = transacciones[i]
-            if inicio <= sospechoso[j] <= fin:
+            if i not in usados and inicio <= sospechoso[j] <= fin:
                 coincidencias.append((intervalo, sospechoso[j]))
+                usados.add(i)
                 encontrado = True
-                break  # Se encontró una coincidencia, pasamos al siguiente sospechoso
+                break  # Se encontró una coincidencia, se pasa a la siguiente transacción del sospechoso
             i += 1
         
         if not encontrado:
@@ -48,7 +50,7 @@ def main():
         
         j += 1
 
-    # Si todas las transacciones encontraron coincidencia, imprimimos el resultado
+    # Si hubo coincidencia en todas las transacciones imprimimos el resultado
     for (t, e), s in coincidencias:
         print(f"{s} --> {t} ± {e}")
 
